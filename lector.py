@@ -2,19 +2,35 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 
-# Abre un cuadro de diálogo para que el usuario seleccione un directorio
-root = tk.Tk()
-root.withdraw()  # Oculta la ventana principal de tkinter
-ruta_directorio = filedialog.askdirectory(title="Selecciona un directorio")
+# Funcion que se ejecuta cuando se hace clic en el boton
+def procesar_archivos():
+    ruta_directorio = filedialog.askdirectory(title="SELECCIONA UNA CARPETA")
 
-if not ruta_directorio:
-    print("No se seleccionó ningún directorio. Saliendo del programa.")
-    exit()
+    if not ruta_directorio:
+        resultado.config(text="NO SE SELECCIONO NINGUNA CARPETA")
+        return
 
-# Lista de extensiones de archivo permitidas
-extensiones_permitidas = ['.py', '.dart']  # Agrega las extensiones que desees permitir en el archivo de salida
+    extensiones_ingresadas = extensiones_entry.get()
+    extensiones_permitidas = [ext.strip() for ext in extensiones_ingresadas.split(',')]
 
-# Lista todos los archivos en el directorio y subdirectorios que tienen las extensiones permitidas
+    archivos = listar_archivos(ruta_directorio, extensiones_permitidas)
+    datos_archivos = []
+
+    for archivo in archivos:
+        nombre_archivo = os.path.basename(archivo)
+        contenido_archivo = leer_contenido(archivo)
+        contenido_decodificado = contenido_archivo.decode('latin-1', errors='replace')
+        datos_archivos.append(f'RUTA_DEL_ARCHIVO: {archivo}\nNOMBRE_DEL_ARCHIVO: {nombre_archivo}\nCONTENIDO:\n{contenido_decodificado}\n{"="*100}')
+
+    ruta_archivo_txt = os.path.join(ruta_directorio, 'codigos.txt')
+
+    with open(ruta_archivo_txt, 'a', encoding='utf-8') as file:
+        file.write('\n'.join(datos_archivos))
+
+    # Configuración del label con un contorno palomeado de color verde
+    resultado.config(text=f'ARCHIVOS Y CONTENIDOS AGREGADOS A: \n{ruta_archivo_txt}', bg="green", bd=2)
+
+# Funcion para listar archivos (igual que en tu codigo original)
 def listar_archivos(ruta, extensiones):
     lista_archivos = []
     for foldername, subfolders, filenames in os.walk(ruta):
@@ -23,27 +39,28 @@ def listar_archivos(ruta, extensiones):
                 lista_archivos.append(os.path.join(foldername, filename))
     return lista_archivos
 
-# Lee el contenido de un archivo como una secuencia de bytes
+# Funcion para leer el contenido de un archivo (igual que en tu codigo original)
 def leer_contenido(archivo):
     with open(archivo, 'rb') as file:
         return file.read()
 
-# Obtiene la lista de archivos y sus contenidos
-archivos = listar_archivos(ruta_directorio, extensiones_permitidas)
-datos_archivos = []
+# Crear la interfaz grafica
+root = tk.Tk()
+root.title("GENERAR CODIGOS EN CARPETAS")
 
-for archivo in archivos:
-    nombre_archivo = os.path.basename(archivo)
-    contenido_archivo = leer_contenido(archivo)
-    # Decodifica los bytes utilizando 'latin-1' (puedes ajustar esto según el formato de codificación del archivo)
-    contenido_decodificado = contenido_archivo.decode('latin-1', errors='replace')
-    datos_archivos.append(f'NOMBRE_DEL_ARCHIVO: {nombre_archivo}\nCONTENIDO:\n{contenido_decodificado}\n{"="*50}')
+# Etiqueta y entrada para las extensiones de archivo
+extensiones_label = tk.Label(root, text="INGRESA LAS EXTENSIONES DE LOS ARCHIVOS \nA GENERAR SU CODIGO CON PUNTO INICIAL Y \nSEPARADOS CON COMA, \nEJEMPLO:'.py, .dart':")
+extensiones_label.pack()
+extensiones_entry = tk.Entry(root)
+extensiones_entry.pack()
 
-# Obtiene la ruta completa del archivo de texto en el directorio seleccionado
-ruta_archivo_txt = os.path.join(ruta_directorio, 'codigos.txt')
+# Boton para procesar archivos
+procesar_button = tk.Button(root, text="GENERAR CODIGOS DE ARCHIVOS", command=procesar_archivos)
+procesar_button.pack()
 
-# Escribe los datos en el archivo de texto (modo de adición)
-with open(ruta_archivo_txt, 'a', encoding='utf-8') as file:
-    file.write('\n'.join(datos_archivos))
+# Etiqueta para mostrar el resultado
+resultado = tk.Label(root, text="")
+resultado.pack()
 
-print(f'Archivos y contenidos agregados a {ruta_archivo_txt}')
+# Iniciar el bucle principal de la interfaz grafica
+root.mainloop()
